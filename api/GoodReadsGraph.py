@@ -236,9 +236,9 @@ def BuildGraph():
     `uir` : user,item,rating data
     `books`: meta information about each of the items (# of ratings, Author, etc.)
     """
-    uir = pd.read_csv("data/goodbooks-10k-master/ratings.csv")
+    uir = pd.read_csv("api/data/goodbooks-10k-master/ratings.csv")
 
-    books = pd.read_csv("data/goodbooks-10k-master/books.csv")
+    books = pd.read_csv("api/data/goodbooks-10k-master/books.csv")
     books = books[(books["language_code"] == "eng") | (books["language_code"] == "en-US")]
     books["author_id"] = (books["authors"].astype("category")).cat.codes # Gives us an index
 
@@ -256,7 +256,7 @@ def BuildGraph():
     2) Gives us book info as well as the Author
     """
     uir = pd.merge(uir, books[["book_id", "original_title",
-                               "author_id","popularity_ratings","ratings_5", "small_image_url"]], on=["book_id"])
+                               "author_id","popularity_ratings","ratings_5", "image_url"]], on=["book_id"])
 
     """
     Let's build a catelog of Author objects first,
@@ -268,7 +268,7 @@ def BuildGraph():
 
     """
     Now we can do the same for the users:
-    
+
     """
     unique_users = uir[["user_id"]].drop_duplicates()
     unique_users["User"] = [User(uid) for uid in unique_users["user_id"]]
@@ -286,27 +286,27 @@ def BuildGraph():
     save our unique_users and unique_authors dataframes as Dictionaries,
     then just call them whenever needed. I think for our relatively small
     dataset, we could just join them to our original dataframe:
-    
+
       `uir = pd.merge(uir, unique_users, on=["user_id"])`
       `uir = pd.merge(uir, unique_authors, on=["author_id"])`
-    
+
     and then process the Books inline with a list comprehension:
-    
+
       `uir["Book"] = [Book(bid, aid, rat, pop , url) for bid, aid, rat, pop , url
-                 in uir[["book_id","Author","ratings_5","popularity_ratings","small_image_url"]].values]`
-    
+                 in uir[["book_id","Author","ratings_5","popularity_ratings","image_url"]].values]`
+
     But I don't want to be too lazy here, so we will use the dictionary route:
     """
 
     unique_books = uir[["book_id", "original_title", "author_id", "ratings_5", "popularity_ratings",
-                        "small_image_url"]].drop_duplicates()
+                        "image_url"]].drop_duplicates()
     unique_books["Book"] = [Book(bid, author_dict[aid]["Author"], rat, pop, url) for bid, aid, rat, pop, url
                             in unique_books[
-                                ["book_id", "author_id", "ratings_5", "popularity_ratings", "small_image_url"]].values]
+                                ["book_id", "author_id", "ratings_5", "popularity_ratings", "image_url"]].values]
 
     # Now that we have our Book objects, let's build it into a dictionary
     _unique_books = unique_books.set_index("book_id", drop=True)
-    _unique_books = _unique_books.drop(["author_id", "ratings_5", "popularity_ratings", "small_image_url"],
+    _unique_books = _unique_books.drop(["author_id", "ratings_5", "popularity_ratings", "image_url"],
                                        axis=1)  # Drop everything
     book_dict = _unique_books.to_dict("index")
 
@@ -317,16 +317,17 @@ def BuildGraph():
     """
     _unique_titles = unique_books.copy()
     _unique_titles["original_title"] = _unique_titles["original_title"].str.lower()
-    _unique_titles = _unique_titles.set_index("original_title", drop=True)
-    _unique_titles = _unique_titles.drop(["author_id", "book_id", "ratings_5", "popularity_ratings", "small_image_url"],
+    _unique_titles = _unique_titles.drop(["author_id", "book_id", "ratings_5", "popularity_ratings", "image_url"],
                                          axis=1)  # Drop everything
+    _unique_titles = _unique_titles.drop_duplicates("original_title").dropna()
+    _unique_titles = _unique_titles.set_index("original_title", drop=True)
     titles_dict = _unique_titles.to_dict("index")
 
     """
     We can finally build our graph by assembling
     our collection of Read() objects and passing the
     list to our Graph: `Read(user, book1, author1) : `
-    
+
     """
 
     read_list = [Read(user_dict[u]["User"], book_dict[b]["Book"], author_dict[a]["Author"], rating=int(r))
