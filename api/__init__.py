@@ -1,3 +1,4 @@
+import logging as logger
 from flask import Flask
 
 def create_app():
@@ -5,5 +6,6 @@ def create_app():
 
     from .app import main
     app.register_blueprint(main)
-
+    
+    logger.debug("App registered")
     return app
