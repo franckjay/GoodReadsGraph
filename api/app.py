@@ -10,6 +10,20 @@ logger.debug("Graph is built service")
 
 output_URL = ""
 
+def large_url(url):
+    """
+    The URL path has an "s,m,l" in it, and
+    we want the large url image
+    """
+    _split=url.split("/")
+    _split[-2]=_split[-2][:-1]+"l"
+
+    large_url = ""
+    for segment in _split:
+        large_url += segment +"/"
+
+    return large_url[:-1]
+
 
 @main.route('/input_book', methods=['POST'])
 def input_book():
@@ -27,8 +41,10 @@ def input_book():
         book_list = BigGraph._book2book(_book_object, N=1)
         book = book_list[0]
         logger.debug(book)
+
+        # Set the global url to be the large version of the input url
         global ouput_URL
-        ouput_URL = str(book.image_url)
+        ouput_URL = large_url(str(book.image_url))
         # Return the image URL to be displayed on our app
         #    NB: POST does not support anything else.
         return "Done", 201
