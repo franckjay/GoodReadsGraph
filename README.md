@@ -1,6 +1,7 @@
 # GoodReadsGraph
-Build a Graph Database of Good Reads book data to recommend novel novels to users
-![alt text](https://github.com/franckjay/GoodReadsGraph/blob/master/ReactApp/src/ReactApp.png "ScreenCapture")
+## Build a Graph Database of Good Reads book data to recommend novel novels to users:
+### In the screenshot below, I entered _Neuromancer_ and got Ann Leckie's _Ancillary Mercy_. 
+![](https://github.com/franckjay/GoodReadsGraph/blob/master/ReactApp/src/ReactApp.png =100x20)
 
 
 ### To run back-end:
